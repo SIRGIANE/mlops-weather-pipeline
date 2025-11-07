@@ -1,0 +1,20 @@
+# 1️⃣ Initialiser Git et DVC
+git init
+dvc init
+
+# 2️⃣ Ajouter le dataset au suivi DVC
+dvc add raw_dataset/weather.csv
+git add .dvc .dvcignore raw_dataset/weather.csv.dvc
+git commit -m "Initialisation du dataset"
+
+# 3️⃣ Exécuter le pipeline
+dvc repro
+
+# 4️⃣ Vérifier les métriques
+dvc metrics show
+
+# 5️⃣ Comparer les métriques entre branches
+dvc metrics diff main
+
+# 6️⃣ Pousser les artefacts vers le remote (optionnel)
+dvc push

@@ -1,0 +1,29 @@
+name: hp-tuning
+on:
+  pull_request:
+    branches: main
+permissions: write-all
+
+jobs:
+  hp_tune:
+    if: startsWith(github.head_ref, 'hp_tune/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+      - uses: iterative/setup-dvc@v1
+      - uses: iterative/setup-cml@v1
+      - run: pip install -r requirements.txt
+      - run: dvc repro -f hp_tuning
+      - env:
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cml pr create \
+          --user-email hp-bot@cicd.ai \
+          --user-name HPBot \
+          --message "HP tuning" \
+          --branch train/${{ github.sha }} \
+          --target-branch main \
+          rfc_best_params.json

@@ -1,0 +1,37 @@
+stages:
+  preprocess:
+    cmd: python3 preprocess_dataset.py
+    deps:
+      - raw_dataset/weather.csv
+      - preprocess_dataset.py
+      - utils_and_constants.py
+    outs:
+      - processed_dataset/weather.csv
+
+  train:
+    cmd: python3 train.py
+    deps:
+      - processed_dataset/weather.csv
+      - model.py
+      - train.py
+      - metrics_and_plots.py
+      - utils_and_constants.py
+    metrics:
+      - metrics.json:
+          cache: false
+    plots:
+      - predictions.csv:
+          template: confusion_normalized
+          x: predicted_label
+          y: true_label
+          cache: false
+
+  hp_tuning:
+    cmd: python3 hp_tuning.py
+    deps:
+      - hp_tuning.py
+      - hp_config.json
+      - processed_dataset/weather.csv
+    outs:
+      - rfc_best_params.json
+      - hp_tuning_results.md
