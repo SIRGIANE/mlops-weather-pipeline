@@ -4,7 +4,9 @@ on:
   pull_request:
     branches: main
 
-permissions: write-all
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   train_and_report_eval_performance:
@@ -19,29 +21,33 @@ jobs:
         with:
           python-version: 3.9
 
-      # ✅ Installer DVC correctement
       - name: Setup DVC
         uses: iterative/setup-dvc@v2
 
-      # ✅ Installer CML pour la génération de rapport
       - name: Setup CML
         uses: iterative/setup-cml@v2
 
-      # (Optionnel mais recommandé)
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
+          pip install dvc cml
 
       - name: Train model
         run: |
           python3 preprocess_dataset.py
           python3 train.py
 
+      - name: Verify training artifacts
+        run: |
+          echo "=== Vérification des fichiers générés ==="
+          ls -lh
+          test -f metrics.json || (echo "❌ metrics.json manquant !" && exit 1)
+          test -f confusion_matrix.png || echo "⚠️ Pas de matrice de confusion générée"
+
       - name: Write CML report
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Créer un rapport Markdown avec les métriques
           echo "## Résultats du modèle" > model_eval_report.md
           echo "" >> model_eval_report.md
           cat metrics.json >> model_eval_report.md
@@ -49,5 +55,5 @@ jobs:
           echo "### Matrice de confusion" >> model_eval_report.md
           echo "![Confusion Matrix](./confusion_matrix.png)" >> model_eval_report.md
 
-          # Publier un commentaire automatique sur la Pull Request
           cml comment create model_eval_report.md
+
