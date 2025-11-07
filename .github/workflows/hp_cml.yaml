@@ -1,10 +1,13 @@
 name: hp-tuning
 
 on:
-  pull_request:
+  pull_request_target:
     branches: main
 
-permissions: write-all
+permissions:
+  contents: write
+  pull-requests: write
+
 
 jobs:
   hp_tune:
