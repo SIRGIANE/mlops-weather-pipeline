@@ -1,31 +1,60 @@
 name: model-training
+
 on:
-  pull_request:
+  pull_request_target:
     branches: main
-permissions: write-all
+
+permissions:
+  contents: write
+  pull-requests: write
+
 
 jobs:
   train_and_report_eval_performance:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.9
+
       - name: Setup DVC
-        uses: iterative/setup-dvc@v1
+        uses: iterative/setup-dvc@v2
+
       - name: Setup CML
-        uses: iterative/setup-cml@v1
+        uses: iterative/setup-cml@v2
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install dvc cml
+
       - name: Train model
         run: |
           python3 preprocess_dataset.py
           python3 train.py
+
+      - name: Verify training artifacts
+        run: |
+          echo "=== Vérification des fichiers générés ==="
+          ls -lh
+          test -f metrics.json || (echo "❌ metrics.json manquant !" && exit 1)
+          test -f confusion_matrix.png || echo "⚠️ Pas de matrice de confusion générée"
+
       - name: Write CML report
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo "## Résultats du modèle" > model_eval_report.md
+          echo "" >> model_eval_report.md
           cat metrics.json >> model_eval_report.md
+          echo "" >> model_eval_report.md
+          echo "### Matrice de confusion" >> model_eval_report.md
           echo "![Confusion Matrix](./confusion_matrix.png)" >> model_eval_report.md
+
           cml comment create model_eval_report.md
+
