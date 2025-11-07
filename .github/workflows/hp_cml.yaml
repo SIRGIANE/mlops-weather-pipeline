@@ -1,23 +1,41 @@
 name: hp-tuning
+
 on:
   pull_request:
     branches: main
+
 permissions: write-all
 
 jobs:
   hp_tune:
     if: startsWith(github.head_ref, 'hp_tune/')
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
-      - uses: iterative/setup-dvc@v1
-      - uses: iterative/setup-cml@v1
-      - run: pip install -r requirements.txt
-      - run: dvc repro -f hp_tuning
-      - env:
+
+      # ✅ Installer DVC
+      - name: Setup DVC
+        uses: iterative/setup-dvc@v2
+
+      # ✅ Installer CML
+      - name: Setup CML
+        uses: iterative/setup-cml@v2
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run DVC hyperparameter tuning
+        run: dvc repro -f hp_tuning
+
+      - name: Create Pull Request for training branch
+        env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cml pr create \
